@@ -8,7 +8,7 @@ add_executable (v8unpack src/main.cpp src/V8File.cpp)
 
 set (Boost_USE_STATIC_LIBS ON)
 set (Boost_USE_MULTITHREADED ON)
-set (Boost_USE_STATIC_RUNTIME OFF)
+set (Boost_USE_STATIC_RUNTIME ON)
 
 find_package (Boost 1.53 REQUIRED COMPONENTS filesystem)
 
