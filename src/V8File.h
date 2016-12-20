@@ -8,7 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 /**
-    2014-2015       dmpas           sergey(dot)batanov(at)dmpas(dot)ru
+    2014-2016       dmpas           sergey(dot)batanov(at)dmpas(dot)ru
  */
 
 // V8File.h: interface for the CV8File class.
@@ -86,7 +86,7 @@ public:
 	static bool IsV8File(const char *pFileData, ULONG FileDataSize);
 	static bool IsV8File(std::basic_ifstream<char> &file);
 
-	int BuildCfFile(const std::string &dirname, const std::string &filename);
+	int BuildCfFile(const std::string &dirname, const std::string &filename, bool dont_pack = false);
 
 	struct stFileHeader
 	{

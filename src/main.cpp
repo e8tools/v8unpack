@@ -4,6 +4,7 @@
 #include "V8File.h"
 #include "version.h"
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -17,14 +18,14 @@ void usage()
 	cout << "Unpack, pack, deflate and inflate 1C v8 file (*.cf)" << endl;
 	cout << endl;
 	cout << "V8UNPACK" << endl;
-	cout << "  -U[NPACK]     in_filename.cf     out_dirname" << endl;
-	cout << "  -PA[CK]       in_dirname         out_filename.cf" << endl;
-	cout << "  -I[NFLATE]    in_filename.data   out_filename" << endl;
-	cout << "  -D[EFLATE]    in_filename        filename.data" << endl;
+	cout << "  -U[NPACK]            in_filename.cf     out_dirname" << endl;
+	cout << "  -PA[CK]              in_dirname         out_filename.cf" << endl;
+	cout << "  -I[NFLATE]           in_filename.data   out_filename" << endl;
+	cout << "  -D[EFLATE]           in_filename        filename.data" << endl;
 	cout << "  -E[XAMPLE]" << endl;
 	cout << "  -BAT" << endl;
-	cout << "  -P[ARSE]      in_filename        out_dirname" << endl;
-	cout << "  -B[UILD]      in_dirname         out_filename" << endl;
+	cout << "  -P[ARSE]             in_filename        out_dirname" << endl;
+	cout << "  -B[UILD] [-N[OPACK]] in_dirname         out_filename" << endl;
 	cout << "  -V[ERSION]" << endl;
 }
 
@@ -40,10 +41,7 @@ int main(int argc, char* argv[])
 	if (argc > 1)
 		cur_mode = argv[1];
 
-	string::iterator p = cur_mode.begin();
-
-	for(;p != cur_mode.end(); ++p)
-		*p = tolower(*p);
+	transform(cur_mode.begin(), cur_mode.end(), cur_mode.begin(), ::tolower);
 
 	int ret = 0;
 
@@ -93,9 +91,21 @@ int main(int argc, char* argv[])
 
 	if (cur_mode == "-build" || cur_mode == "-b") {
 
+		bool dont_pack = false;
+		int argbase = 2;
+
+		if (argc > 2) {
+			string arg2(argv[2]);
+			transform(arg2.begin(), arg2.end(), arg2.begin(), ::tolower);
+			if (arg2 == "-n" || arg2 == "-nopack") {
+				argbase++;
+				dont_pack = true;
+			}
+		}
+
 		CV8File V8File;
 
-		ret = V8File.BuildCfFile(argv[2], argv[3]);
+		ret = V8File.BuildCfFile(argv[argbase], argv[argbase + 1], dont_pack);
 		if (ret == SHOW_USAGE)
 			usage();
 

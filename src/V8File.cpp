@@ -8,7 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 /**
-    2014-2015       dmpas       sergey(dot)batanov(at)dmpas(dot)ru
+    2014-2016       dmpas       sergey(dot)batanov(at)dmpas(dot)ru
  */
 
 // V8File.cpp: implementation of the CV8File class.
@@ -1412,7 +1412,7 @@ int CV8File::SaveFile(const std::string &filename)
 
 }
 
-int CV8File::BuildCfFile(const std::string &in_dirname, const std::string &out_filename)
+int CV8File::BuildCfFile(const std::string &in_dirname, const std::string &out_filename, bool dont_pack)
 {
     //filename can't be empty
     if (!in_dirname.size()) {
@@ -1426,15 +1426,15 @@ int CV8File::BuildCfFile(const std::string &in_dirname, const std::string &out_f
         return SHOW_USAGE;
     }
 
+    if (!boost::filesystem::exists(in_dirname)) {
+        std::cerr << "Source directory does not exist!" << std::endl;
+        return -1;
+    }
+
     UINT ElemsNum = 0;
     {
         boost::filesystem::directory_iterator d_end;
         boost::filesystem::directory_iterator dit(in_dirname);
-
-        if (dit == d_end) {
-            std::cerr << "Build error. Directory `" << in_dirname << "` is empty.";
-            return -1;
-        }
 
         for (; dit != d_end; ++dit) {
 
@@ -1536,8 +1536,12 @@ int CV8File::BuildCfFile(const std::string &in_dirname, const std::string &out_f
             boost::filesystem::ifstream file_in(p_filename, std::ios_base::binary);
             file_in.read(reinterpret_cast<char*>(pElem.pData), pElem.DataSize);
         }
-        //Сжимаем данные
-        PackElem(pElem);
+
+        if (!dont_pack) {
+            //Сжимаем данные
+            PackElem(pElem);
+        }
+
         //Добавляем элемент в TOC
         pTOC[ElemNum].elem_header_addr = cur_block_addr;
         cur_block_addr += sizeof(stBlockHeader) + pElem.HeaderSize;
@@ -1551,6 +1555,7 @@ int CV8File::BuildCfFile(const std::string &in_dirname, const std::string &out_f
         //Записываем элемент в файл
         SaveBlockData(file_out, pElem.pHeader, pElem.HeaderSize, pElem.HeaderSize);
         SaveBlockData(file_out, pElem.pData, pElem.DataSize);
+
         //Освобождаем память
         delete[] pElem.pData;
         pElem.pData = NULL;
@@ -1559,6 +1564,7 @@ int CV8File::BuildCfFile(const std::string &in_dirname, const std::string &out_f
         pElem.IsV8File = false;
         pElem.HeaderSize = 0;
         pElem.DataSize = 0;
+
         ElemNum++;
     }
 
