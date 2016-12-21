@@ -10,7 +10,7 @@ set (Boost_USE_STATIC_LIBS ON)
 set (Boost_USE_MULTITHREADED ON)
 set (Boost_USE_STATIC_RUNTIME OFF)
 
-find_package (Boost 1.53 REQUIRED COMPONENTS filesystem)
+find_package (Boost 1.53 REQUIRED COMPONENTS filesystem system)
 
 include_directories (${Boost_INCLUDE_DIRS})
 target_link_libraries (v8unpack ${Boost_LIBRARIES})
