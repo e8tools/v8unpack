@@ -1,0 +1,10 @@
+language: cpp
+compiler: gcc
+install: sudo apt-get install cmake zlib1g-dev libboost-filesystem-dev libboost-system-dev
+script: cmake . && cmake --build .
+after_success:
+    - cpack -G DEB
+    - dpkg-name *.deb
+
+
+
