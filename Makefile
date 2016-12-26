@@ -15,7 +15,7 @@ INC =
 CFLAGS = -Wall
 RESINC = 
 LIBDIR = 
-LIB = -lz -lboost_filesystem -lboost_system
+LIB = -static -lz -lboost_filesystem -lboost_system
 LDFLAGS = 
 
 INC_RELEASE = $(INC)
@@ -54,7 +54,7 @@ after_release:
 release: $(OUT_RELEASE) after_release
 
 $(OUT_RELEASE): bin/Release $(OBJ_RELEASE) $(DEP_RELEASE)
-	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE) -ldl
+	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE)
 
 $(OBJDIR_RELEASE)/src/V8File.o: src/V8File.cpp
 	$(CXX) -D__LINUX $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/V8File.cpp -o $(OBJDIR_RELEASE)/src/V8File.o

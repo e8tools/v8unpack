@@ -1,4 +1,4 @@
-version: 3.0.36.{build}
+version: 3.0.38.{build}
 pull_requests:
   do_not_increment_build_number: true
 clone_depth: 1
