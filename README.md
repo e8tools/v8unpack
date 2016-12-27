@@ -26,7 +26,7 @@ CMake
 
 [![Build status](https://ci.appveyor.com/api/projects/status/48ac3trblfjjkts7/branch/master?svg=true)](https://ci.appveyor.com/project/dmpas/v8unpack/branch/master)
 
-[Прямая ссылка на последнюю успешную сборку win32](https://ci.appveyor.com/api/projects/dmpas/v8unpack/artifacts/Release%2Fv8unpack.exe)
+[Прямая ссылка на последнюю успешную сборку win32](https://ci.appveyor.com/api/projects/dmpas/v8unpack/artifacts/Release%2Fv8unpack.exe?branch=master)
 
 ### Ubuntu/Debian
 
