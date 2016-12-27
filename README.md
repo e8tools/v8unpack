@@ -20,14 +20,13 @@ Windows, POSIX
 
 Project for [codelite IDE](http://www.codelite.org/)  
 Project for [Codeblocks IDE](http://codeblocks.org/)
+CMake
 
 ## Build
 
-Артефакты/релизы можно скачать с [build-server проекта](https://build.batanov.me/job/v8unpack-win/)
+[![Build status](https://ci.appveyor.com/api/projects/status/48ac3trblfjjkts7?svg=true)](https://ci.appveyor.com/project/dmpas/v8unpack)
 
-[Прямая ссылка на последнюю успешную сборку win32](https://build.batanov.me/view/e8-script/job/v8unpack-win/label=mingw32/lastSuccessfulBuild/artifact/bin/Release/*zip*/v8unpack.zip)
-
-[Прямая ссылка на последнюю успешную сборку win64](https://build.batanov.me/view/e8-script/job/v8unpack-win/label=mingw64/lastSuccessfulBuild/artifact/bin/Release/*zip*/v8unpack.zip)
+[Прямая ссылка на последнюю успешную сборку win32](https://ci.appveyor.com/api/projects/dmpas/v8unpack/artifacts/Release%2Fv8unpack.exe)
 
 ### Ubuntu/Debian
 
