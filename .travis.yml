@@ -8,7 +8,4 @@ install: sudo apt-get install -y cmake zlib1g-dev libboost-filesystem-dev libboo
 script:
     - cmake . && cmake --build .
     - cd test && ./run.sh ../v8unpack
-after_success:
-    - cpack -G DEB
-    - dpkg-name *.deb
 

@@ -28,12 +28,3 @@ find_package (ZLIB REQUIRED)
 include_directories (${ZLIB_INCLUDE_DIRS})
 target_link_libraries (v8unpack ${ZLIB_LIBRARIES})
 
-set (CPACK_PACKAGE_NAME v8unpack)
-set (CPACK_PACKAGE_VERSION 3.0.37)
-set (CPACK_DEBIAN_PACKAGE_DEPENDS libboost-filesystem libboost-system zlib1g-dev)
-set (CPACK_PACKAGE_CONTACT sergey.batanov@dmpas.ru)
-set (CPACK_PACKAGE_DESCRIPTION_SUMMARY Enterprise 8 unpack tool)
-set (CPACK_DEBIAN_PACKAGE_SECTION utils)
-
-include (CPack)
-
