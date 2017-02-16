@@ -19,7 +19,12 @@ rm -rf $DIRNAME
 depth=3
 create_data $depth $DIRNAME
 
-UNPACK=../bin/Release/v8unpack
+if [ -z "$1" ]; then
+	UNPACK=../bin/Release/v8unpack
+else
+	UNPACK=$1
+fi
+
 OUTDIRNAME='out-test'
 TMPFILE=file.tmp
 DIFFLOG=diff.log
