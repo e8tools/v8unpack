@@ -5,7 +5,9 @@ compiler: gcc
 before_install:
     - sudo apt-get -qq update
 install: sudo apt-get install -y cmake zlib1g-dev libboost-filesystem-dev libboost-system-dev
-script: cmake . && cmake --build .
+script:
+    - cmake . && cmake --build .
+    - cd test && ./run.sh
 after_success:
     - cpack -G DEB
     - dpkg-name *.deb
