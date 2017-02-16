@@ -13,8 +13,10 @@ rpmdev-setuptree
 ```
 
 Копируем v8unpack.spec в ~/rpmbuild/SPEC
-переименовать каталог v8unpack в v8unpack-3.0 и запаковать его в v8unpack-3.0.tar.gz
-скопировать v8unpack-3.0.tar.gz в SOURCE
+выполняем комманду 
+```
+spectool -g -R SPECS/v8unpack.spec
+```
 
 пакет собирается с помощью команды 
 ```

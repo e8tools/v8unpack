@@ -11,8 +11,9 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="-i 1cv8.cfu inflated.txt " />
+				<Option parameters="-i -l list.txt" />
 				<Compiler>
+					<Add option="-std=c++11" />
 					<Add option="-pg" />
 					<Add option="-g" />
 				</Compiler>
@@ -27,6 +28,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add option="-std=c++11" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -44,6 +46,9 @@
 			<Add library="boost_filesystem" />
 			<Add library="boost_system" />
 		</Linker>
+		<Unit filename="VersionInfo.rc">
+			<Option compilerVar="WINDRES" />
+		</Unit>
 		<Unit filename="src/V8File.cpp" />
 		<Unit filename="src/V8File.h" />
 		<Unit filename="src/main.cpp" />

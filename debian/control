@@ -2,12 +2,14 @@ Source: v8unpack
 Section: utils
 Priority: optional
 Maintainer: Sergey Batanov <sergey.batanov@dmpas.ru>
-Build-Depends: debhelper (>= 8.0.0), libboost-filesystem-dev (>= 1.53), libboost-system-dev (>= 1.53), zlib1g-dev 
+Build-Depends: debhelper (>= 8.0.0),
+  libboost-filesystem-dev (>= 1.53), libboost-system-dev (>= 1.53),
+  zlib1g-dev, libstdc++-dev
 Standards-Version: 3.9.4
 Homepage: https://github.com/dmpas/v8unpack
 Vcs-Git: https://github.com/dmpas/v8unpack.git
 
 Package: v8unpack
-Architecture: i386 amd64 
+Architecture: i386 amd64
 Depends:
-Description: Enterprise 8 unpack tool 
+Description: Enterprise 8 unpack tool

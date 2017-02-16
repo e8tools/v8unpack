@@ -1,1 +1,0 @@
-cscript.exe UPdirTest00.js "8.2.19.83" /TESTIB /PARSE

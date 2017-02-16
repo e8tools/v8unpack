@@ -1,3 +1,23 @@
+v8unpack (3.0.38-3~xenial) xenial; urgency=low
+
+  * Xenial port
+
+ -- Sergey Batanov <sergey.batanov@dmpas.ru>  Tue, 27 Dec 2016 01:02:07 +0300
+
+v8unpack (3.0.38-3~vivid) vivid; urgency=low
+
+  * Vivid port
+
+ -- Sergey Batanov <sergey.batanov@dmpas.ru>  Tue, 27 Dec 2016 01:02:07 +0300
+
+v8unpack (3.0.38-3) trusty; urgency=low
+
+  * Added -build -nopack mode
+  * Deb-dependencies updated
+  * Switched to static linking
+
+ -- Sergey Batanov <sergey.batanov@dmpas.ru>  Mon, 26 Dec 2016 23:31:46 +0300
+
 v8unpack (3.0.36-1) trusty; urgency=low
 
   * Corrected installation binary path 
