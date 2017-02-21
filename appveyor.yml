@@ -19,7 +19,7 @@ install:
 
     cd build
 
-    cmake ..
+    cmake -DCMAKE_SHARED_LINKER_FLAGS="/NODEFAULTLIB:MSVCRT" -DCMAKE_C_FLAGS_RELEASE="/MT /O2 /Ob2 /D NDEBUG" ..
 
     cmake --build . --config Release --target zlibstatic
 
