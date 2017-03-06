@@ -3,7 +3,7 @@ Version:        3.0.38
 Release:        1%{?dist}
 Summary:        Enterprise 8 unpack tool 
 
-License:        No License
+License:        Mozilla Public License 2.0
 URL:            https://github.com/dmpas/v8unpack
 Source0:        https://github.com/dmpas/v8unpack/archive/v.3.0.38.tar.gz
 
