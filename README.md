@@ -49,3 +49,21 @@ sudo dnf install v8unpack
 - Оптимизирована сборка .cf файла ключ -B[UILD]. В версии 2.0 сборка корневого контейнера происходила в оперативной памяти.
 При сборке больших конфигураций это могло приводить к ошибке "segmentation fault". В версии 3.0 сборка корневого контейнера происходит 
 динамически с сохранением элементов контейнера непосредственно в файл по мере их создания.
+
+
+## Использование
+
+```
+  -U[NPACK]            in_filename.cf     out_dirname
+  -U[NPACK]  -L[IST]   listfile
+  -PA[CK]              in_dirname         out_filename.cf
+  -PA[CK]    -L[IST]   listfile
+  -I[NFLATE]           in_filename.data   out_filename
+  -I[NFLATE] -L[IST]   listfile
+  -D[EFLATE]           in_filename        filename.data
+  -D[EFLATE] -L[IST]   listfile
+  -P[ARSE]             in_filename        out_dirname
+  -P[ARSE]   -L[IST]   listfile
+  -B[UILD] [-N[OPACK]] in_dirname         out_filename
+  -B[UILD] [-N[OPACK]] -L[IST] listfile
+```
