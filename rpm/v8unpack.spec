@@ -1,5 +1,5 @@
 Name:           v8unpack
-Version:        3.0.38
+Version:        3.0.40
 Release:        1%{?dist}
 Summary:        Enterprise 8 unpack tool 
 
