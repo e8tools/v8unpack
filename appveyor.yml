@@ -44,7 +44,7 @@ after_build:
 
     light -out v8unpack-%APPVEYOR_BUILD_VERSION%.msi v8unpack.wixobj
 
-    chocho pack
+    choco pack
 
 artifacts:
 - path: Release\*.exe
