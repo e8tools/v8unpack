@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+	<Product Name='V8 Unpack tool 3.0.41'
+		Id='bfc3ebc4-07b8-4b8c-a538-a5c16f129200' UpgradeCode='85171950-1e08-40a5-b7cd-84a0652c8fe8'
+		Manufacturer='dmpas.ru'
+		Language='1049' Codepage='1251' Version='3.0.41' >
+		<Package Id='*' Keywords='Installer' Description='V8 Unpack tool 3.0.41'
+			InstallerVersion='100' Languages='1049' Compressed='yes' SummaryCodepage='1251' />
+		<Media Id="1" Cabinet="data1.cab" EmbedCab="yes" />
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFilesFolder">
+				<Directory Id="APPLICATIONFOLDER" Name="v8unpack">
+					<Component Id="V8Unpack_Component" Guid='270290c4-bffb-4c60-874e-f74ad4ca2aaa'>
+						<File Id='v8unpack.exe' DiskId='1' Source='Release\v8unpack.exe' />
+						<File Id='LICENSE' DiskId='1' Source='LICENSE' />
+					</Component>
+					<Component Id="SetPathVariable" Guid='7f5afde6-7413-490d-8b57-f8eeaa246b13' KeyPath='yes'>
+						<Environment Action='set' Id='SetPathToInstallFolderToSystemPath'
+							Name='PATH'
+							Value="[APPLICATIONFOLDER]"
+							System='yes'
+							Permanent='no'
+							Part='last'
+						/>
+					</Component>
+				</Directory>
+			</Directory>
+		</Directory>
+		<Property Id='ApplicationFolderName' Value='v8unpack' />
+		<Feature Id="BasicInstallation" Title="v8unpack basic installation" Level="1">
+			<ComponentRef Id="V8Unpack_Component" />
+			<ComponentRef Id="SetPathVariable" />
+		</Feature>
+	</Product>
+</Wix>
