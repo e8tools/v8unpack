@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>v8unpack</id>
+    <version>3.0.41</version>
+    <packageSourceUrl>https://github.com/dmpas/v8unpack</packageSourceUrl>
+    <!--<owners>__REPLACE_YOUR_NAME__</owners>-->
+    <!-- ============================== -->
+
+    <!-- == SOFTWARE SPECIFIC SECTION == -->
+    <!-- This section is about the software itself -->
+    <title>v8unpack</title>
+    <authors>Denis Demidov, Sergey Batanov</authors>
+    <projectUrl>https://github.com/dmpas/v8unpack</projectUrl>
+    <!--<iconUrl>http://cdn.rawgit.com/__REPLACE_YOUR_REPO__/master/icons/v8unpack.png</iconUrl>-->
+    <!-- <copyright>Year Software Vendor</copyright> -->
+    <licenseUrl>http://mozilla.org/MPL/2.0/</licenseUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/dmpas/v8unpack</projectSourceUrl>
+    <docsUrl>https://github.com/dmpas/v8unpack/wiki</docsUrl>
+    <bugTrackerUrl>https://github.com/dmpas/v8unpack/issues</bugTrackerUrl>
+    <tags>v8unpack cf epf</tags>
+    <summary>CF-files management tool</summary>
+    <description>Pack/unpack CF-files</description>
+    <!-- <releaseNotes>__REPLACE_OR_REMOVE__MarkDown_Okay</releaseNotes> -->
+    <!-- =============================== -->      
+</metadata>
+  <files>
+    <!-- this section controls what actually gets packaged into the Chocolatey package -->
+    <file src="choco\tools\**" target="tools" />
+    <file src="README.md" target="." />
+    <file src="LICENSE*" target="." />
+  </files>
+</package>
