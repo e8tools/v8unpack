@@ -1,10 +1,8 @@
 ﻿$ErrorActionPreference = 'Stop';
 
-$tag='v.3.0.41-alpha'
-$vetsion='3.0.41'
 $packageName= 'v8unpack'
 $toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
-$url        = "https://github.com/dmpas/v8unpack/releases/download/$tag/v8unpack-$version.msi"
+$url        = "https://github.com/dmpas/v8unpack/releases/download/v.$version/v8unpack-$version.msi"
 $url64      = ''
 
 $packageArgs = @{
