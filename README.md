@@ -43,6 +43,10 @@ sudo wget http://download.opensuse.org/repositories/home:/pumbaEO/Fedora_22/home
 sudo dnf install v8unpack
 ```
 
+### Chocolatey
+```
+choco install v8unpack -source https://www.myget.org/F/onescript -y
+```
 
 ## Version 3.0
 
