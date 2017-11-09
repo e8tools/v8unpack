@@ -36,8 +36,6 @@ at http://mozilla.org/MPL/2.0/.
 
 using namespace std;
 
-
-
 template<typename T>
 void full_copy(basic_istream<T> &in_file, basic_ostream<T> &out_file)
 {
@@ -959,8 +957,9 @@ int CV8File::ReadBlockData(char *pFileData, stBlockHeader *pBlockHeader, char *&
 
         page_size = _httoi(pBlockHeader->page_size_hex);
         next_page_addr = _httoi(pBlockHeader->next_page_addr_hex);
-
-        bytes_to_read = MIN(page_size, data_size - read_in_bytes);
+			
+        //bytes_to_read = MIN(page_size, data_size - read_in_bytes);
+		bytes_to_read = std::min(page_size, data_size - read_in_bytes);
 
         memcpy(&pBlockData[read_in_bytes], (char*)(&pBlockHeader[1]), bytes_to_read);
 
@@ -1002,7 +1001,8 @@ int CV8File::ReadBlockData(std::basic_istream<char> &file, stBlockHeader *pBlock
         page_size = _httoi(pBlockHeader->page_size_hex);
         next_page_addr = _httoi(pBlockHeader->next_page_addr_hex);
 
-        bytes_to_read = MIN(page_size, data_size - read_in_bytes);
+        //bytes_to_read = MIN(page_size, data_size - read_in_bytes);
+		bytes_to_read = std::min(page_size, data_size - read_in_bytes);
 
         file.read(&pBlockData[read_in_bytes], bytes_to_read);
 
@@ -1041,7 +1041,8 @@ int CV8File::ReadBlockData(std::basic_istream<char> &file, stBlockHeader *pBlock
         page_size = _httoi(pBlockHeader->page_size_hex);
         next_page_addr = _httoi(pBlockHeader->next_page_addr_hex);
 
-        bytes_to_read = MIN(page_size, data_size - read_in_bytes);
+        //bytes_to_read = MIN(page_size, data_size - read_in_bytes);
+		bytes_to_read = std::min(page_size, data_size - read_in_bytes);
 
         const int buf_size = 1024; // TODO: Настраиваемый размер буфера
         char *pBlockData = new char [buf_size];
@@ -1049,6 +1050,7 @@ int CV8File::ReadBlockData(std::basic_istream<char> &file, stBlockHeader *pBlock
 
         while (read_done < bytes_to_read) {
             file.read(pBlockData, MIN(buf_size, bytes_to_read - read_done));
+			//file.read(pBlockData, std::min(buf_size, bytes_to_read - read_done));
             int rd = file.gcount();
             out.write(pBlockData, rd);
             read_done += rd;
@@ -1170,7 +1172,8 @@ int CV8File::PackFromFolder(const std::string &dirname, const std::string &filen
 
 	// [0] + [1]
 	DWORD cur_block_addr = stFileHeader::Size() + stBlockHeader::Size();
-	size_t addr_block_size = MAX(sizeof(stElemAddr) * ElemsNum, V8_DEFAULT_PAGE_SIZE);
+	//size_t addr_block_size = MAX(sizeof(stElemAddr) * ElemsNum, V8_DEFAULT_PAGE_SIZE);
+	size_t addr_block_size = std::max(sizeof(stElemAddr) * ElemsNum, V8_DEFAULT_PAGE_SIZE);
 	cur_block_addr += addr_block_size; // +[2]
 
 	for (auto elem : Elems) {
@@ -1181,7 +1184,8 @@ int CV8File::PackFromFolder(const std::string &dirname, const std::string &filen
 
 		addr.elem_data_addr = cur_block_addr;
 		cur_block_addr += sizeof(stBlockHeader); // +[5]
-		cur_block_addr += MAX(elem.data_size, V8_DEFAULT_PAGE_SIZE); // +[6]
+		//cur_block_addr += MAX(elem.data_size, V8_DEFAULT_PAGE_SIZE); // +[6]
+		cur_block_addr += std::max(elem.data_size, V8_DEFAULT_PAGE_SIZE); // +[6]
 
 		addr.fffffff = V8_FF_SIGNATURE;
 
@@ -1468,7 +1472,8 @@ int CV8File::BuildCfFile(const std::string &in_dirname, const std::string &out_f
     DWORD cur_block_addr = stFileHeader::Size() + stBlockHeader::Size();
     stElemAddr *pTOC;
     pTOC = new stElemAddr[ElemsNum];
-	cur_block_addr += MAX(stElemAddr::Size() * ElemsNum, V8_DEFAULT_PAGE_SIZE);
+	//cur_block_addr += MAX(stElemAddr::Size() * ElemsNum, V8_DEFAULT_PAGE_SIZE);
+	cur_block_addr += std::max(stElemAddr::Size() * ElemsNum, V8_DEFAULT_PAGE_SIZE);
 
     boost::filesystem::ofstream file_out(out_filename, std::ios_base::binary);
     //Открываем выходной файл контейнер на запись
@@ -1751,7 +1756,8 @@ int CV8File::GetData(char **DataBuffer, ULONG *DataBufferSize)
     NeedDataBufferSize += stFileHeader::Size();
 
     // заголовок блока и данные блока - адреса элементов с учетом минимальной страницы 512 байт
-    NeedDataBufferSize += stBlockHeader::Size() + MAX(stElemAddr::Size() * ElemsNum, V8_DEFAULT_PAGE_SIZE);
+    //NeedDataBufferSize += stBlockHeader::Size() + MAX(stElemAddr::Size() * ElemsNum, V8_DEFAULT_PAGE_SIZE);
+	NeedDataBufferSize += stBlockHeader::Size() + std::max(stElemAddr::Size() * ElemsNum, V8_DEFAULT_PAGE_SIZE);
 
 	for (auto elem : Elems) {
 
@@ -1764,7 +1770,8 @@ int CV8File::GetData(char **DataBuffer, ULONG *DataBufferSize)
 			elem.IsV8File = false;
 
 		}
-		NeedDataBufferSize += stBlockHeader::Size() + MAX(elem.DataSize, V8_DEFAULT_PAGE_SIZE);
+		//NeedDataBufferSize += stBlockHeader::Size() + MAX(elem.DataSize, V8_DEFAULT_PAGE_SIZE);
+		NeedDataBufferSize += stBlockHeader::Size() + std::max(elem.DataSize, V8_DEFAULT_PAGE_SIZE);
 	}
 
 
@@ -1773,7 +1780,8 @@ int CV8File::GetData(char **DataBuffer, ULONG *DataBufferSize)
     pCurrentTempElem = pTempElemsAddrs;
 
     DWORD cur_block_addr = stFileHeader::Size() + stBlockHeader::Size();
-	cur_block_addr += MAX(V8_DEFAULT_PAGE_SIZE, stElemAddr::Size() * ElemsNum);
+	//cur_block_addr += MAX(V8_DEFAULT_PAGE_SIZE, stElemAddr::Size() * ElemsNum);
+	cur_block_addr += std::max(V8_DEFAULT_PAGE_SIZE, stElemAddr::Size() * ElemsNum);
 
 	for (auto elem : Elems) {
 
@@ -1783,7 +1791,8 @@ int CV8File::GetData(char **DataBuffer, ULONG *DataBufferSize)
 		pCurrentTempElem->elem_data_addr = cur_block_addr;
 		cur_block_addr += sizeof(stBlockHeader);
 
-		cur_block_addr += MAX(elem.DataSize, V8_DEFAULT_PAGE_SIZE);
+		//cur_block_addr += MAX(elem.DataSize, V8_DEFAULT_PAGE_SIZE);
+		cur_block_addr += std::max(elem.DataSize, V8_DEFAULT_PAGE_SIZE);
 
 		pCurrentTempElem->fffffff = V8_FF_SIGNATURE;
 		++pCurrentTempElem;

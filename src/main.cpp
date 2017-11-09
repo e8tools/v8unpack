@@ -28,6 +28,8 @@ at http://mozilla.org/MPL/2.0/.
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
+#pragma comment (lib, "zlibstatic.lib")
+
 using namespace std;
 
 typedef int (*handler_t)(vector<string> &argv);

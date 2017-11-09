@@ -5,5 +5,5 @@ was not distributed with this file, You can obtain one
 at http://mozilla.org/MPL/2.0/.
 ----------------------------------------------------------*/
 
-#define V8P_VERSION "3.0.40" //FIXME
+#define V8P_VERSION "3.0.41"
 #define V8P_RIGHT "\n\t2008 Denis Demidov 2008-03-30\n\t2014-2017 Sergey Batanov"
