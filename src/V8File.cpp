@@ -37,8 +37,6 @@ at http://mozilla.org/MPL/2.0/.
 
 using namespace std;
 
-
-
 template<typename T>
 void full_copy(basic_istream<T> &in_file, basic_ostream<T> &out_file)
 {
@@ -1197,7 +1195,7 @@ int CV8File::ReadBlockData(char *pFileData, stBlockHeader *pBlockHeader, char *&
 
         page_size = _httoi(pBlockHeader->page_size_hex);
         next_page_addr = _httoi(pBlockHeader->next_page_addr_hex);
-
+			
         bytes_to_read = MIN(page_size, data_size - read_in_bytes);
 
         memcpy(&pBlockData[read_in_bytes], (char*)(&pBlockHeader[1]), bytes_to_read);

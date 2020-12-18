@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\V8File.cpp" />
+    <ClCompile Include="src\metaread\Base64.cpp">
+      <Filter>metaread</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\V8File.h" />
+    <ClInclude Include="src\version.h" />
+    <ClInclude Include="src\zconf.h" />
+    <ClInclude Include="src\zlib.h" />
+    <ClInclude Include="src\metaread\Base64.h">
+      <Filter>metaread</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="metaread">
+      <UniqueIdentifier>{67811e5c-fe00-4ca7-adff-5a7907466d33}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

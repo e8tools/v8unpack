@@ -2,10 +2,13 @@
 *~
 *.tmp
 Debug
+Release
 *.o
 *.d
 tmp
 .codelite
+.VS
+*.json
 v8unpack.txt
 *.workspace
 Makefile
