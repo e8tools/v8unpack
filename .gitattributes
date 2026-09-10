@@ -1,1 +1,2 @@
-*.sh -crlf
+*.sh text eol=lf
+test/fixtures/** -text

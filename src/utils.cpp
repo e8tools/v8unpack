@@ -432,6 +432,8 @@ try_inflate(std::istream &source, std::ostream &dest)
 
 	if (ret != Z_OK) {
 		// Файл не распаковывается - записываем, как есть
+		source.clear();
+		dest.clear();
 		source.seekg(gpos, std::ios_base::beg);
 		dest.seekp(ppos, std::ios_base::beg);
 

@@ -25,6 +25,16 @@ else
 	UNPACK=$1
 fi
 
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+
+echo 'black-box parse fixtures...'
+if ! bash "$SCRIPT_DIR/run_fixtures.sh" "$UNPACK"; then
+	echo Failed
+	exit 1
+fi
+echo Passed
+
+
 OUTDIRNAME='out-test'
 TMPFILE=file.tmp
 DIFFLOG=diff.log
