@@ -42,6 +42,10 @@ const int V8UNPACK_NOT_V8_FILE = V8UNPACK_ERROR - 1;
 const int V8UNPACK_HEADER_ELEM_NOT_CORRECT = V8UNPACK_ERROR - 2;
 const int V8UNPACK_SOURCE_DOES_NOT_EXIST = V8UNPACK_ERROR - 3;
 const int V8UNPACK_ERROR_CREATING_OUTPUT_FILE = V8UNPACK_ERROR - 4;
+const int V8UNPACK_ELEM_ALREADY_EXISTS = V8UNPACK_ERROR - 5;
+const int V8UNPACK_NOT_VERSIONS_FILE = V8UNPACK_ERROR - 6;
+const int V8UNPACK_ELEM_NOT_FOUND = V8UNPACK_ERROR - 7;
+const int V8UNPACK_INVALID_VERSION = V8UNPACK_ERROR - 8;
 const int V8UNPACK_INFLATE_ERROR = V8UNPACK_ERROR - 20;
 const int V8UNPACK_INFLATE_IN_FILE_NOT_FOUND = V8UNPACK_INFLATE_ERROR - 1;
 const int V8UNPACK_INFLATE_OUT_FILE_NOT_CREATED = V8UNPACK_INFLATE_ERROR - 2;
@@ -350,6 +354,25 @@ int Parse(
 );
 
 int ListFiles(const std::string &filename);
+int DeleteBlocks(const std::string &filename, const std::vector<std::string> &masks);
+
+enum class AddMode {
+	Pack = 0,
+	Build,
+	BuildNopack
+};
+
+struct AddItem {
+	std::string source;
+	std::string name;
+};
+
+int AddToContainer(
+		const std::string &filename,
+		const std::vector<AddItem> &items,
+		AddMode mode,
+		bool replace = false
+);
 bool IsV8File(std::basic_istream<char> &file);
 bool IsV8File16ZeroBased(std::basic_istream<char>& file);
 bool IsV8File16(std::basic_istream<char>& file);

@@ -19,6 +19,7 @@ at http://mozilla.org/MPL/2.0/.
 #include "VersionFile.h"
 #include <iostream>
 #include <sstream>
+#include <iterator>
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <utility>
@@ -549,6 +550,9 @@ static int recursive_unpack(const string& directory, basic_istream<char>& file, 
 			ElemsNum = i;
 			break;
 		}
+		if (pElemsAddrs[i].elem_header_addr == format::UNDEFINED_VALUE) {
+			continue;
+		}
 
 		file.seekg(pElemsAddrs[i].elem_header_addr + format::BASE_OFFSET, ios_base::beg);
 
@@ -593,6 +597,9 @@ static int list_files(boost::filesystem::ifstream &file)
 			ElemsNum = i;
 			break;
 		}
+		if (pElemsAddrs[i].elem_header_addr == format::UNDEFINED_VALUE) {
+			continue;
+		}
 
 		file.seekg(pElemsAddrs[i].elem_header_addr + format::BASE_OFFSET, ios_base::beg);
 
@@ -632,9 +639,746 @@ int ListFiles(const string &filename)
 	return list_files<Format15>(file);
 }
 
+static bool
+MatchMask(const string &name, const string &mask)
+{
+	size_t n = 0;
+	size_t m = 0;
+	size_t star_n = string::npos;
+	size_t star_m = string::npos;
+
+	while (n < name.size()) {
+		if (m < mask.size() && (mask[m] == '?' || mask[m] == name[n])) {
+			++n;
+			++m;
+		} else if (m < mask.size() && mask[m] == '*') {
+			star_n = n;
+			star_m = m;
+			++m;
+		} else if (star_m != string::npos) {
+			++star_n;
+			n = star_n;
+			m = star_m + 1;
+		} else {
+			return false;
+		}
+	}
+
+	while (m < mask.size() && mask[m] == '*') {
+		++m;
+	}
+
+	return m == mask.size();
+}
+
+static bool
+NameMatchesMasks(const string &name, const vector<string> &masks)
+{
+	for (const auto &mask : masks) {
+		if (MatchMask(name, mask)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+template<typename format, typename stream_t, typename addr_t>
+static bool append_block_to_free_list(
+		stream_t &file,
+		addr_t block_addr,
+		addr_t &free_head)
+{
+	if (block_addr == format::UNDEFINED_VALUE) {
+		return true;
+	}
+
+	auto current = block_addr;
+	typename format::block_header_t header;
+
+	for (;;) {
+		file.clear();
+		file.seekg(current + format::BASE_OFFSET, ios_base::beg);
+		file.read(reinterpret_cast<char*>(&header), header.Size());
+		if (!file || !header.IsCorrect()) {
+			return false;
+		}
+
+		auto next = header.next_page_addr();
+		if (next == format::UNDEFINED_VALUE) {
+			break;
+		}
+		current = next;
+	}
+
+	header.set_next_page_addr(free_head);
+	file.clear();
+	file.seekp(current + format::BASE_OFFSET, ios_base::beg);
+	file.write(reinterpret_cast<const char*>(&header), header.Size());
+	if (!file) {
+		return false;
+	}
+
+	free_head = block_addr;
+	return true;
+}
+
+template<typename format, typename stream_t>
+static bool write_into_block(
+		stream_t &file,
+		std::streamoff block_pos,
+		size_t offset_in_data,
+		const char *src,
+		size_t len)
+{
+	if (len == 0) {
+		return true;
+	}
+
+	const size_t end = offset_in_data + len;
+	size_t data_cursor = 0;
+	std::streamoff page_pos = block_pos;
+
+	for (;;) {
+		file.clear();
+		file.seekg(page_pos, ios_base::beg);
+		typename format::block_header_t header;
+		file.read(reinterpret_cast<char*>(&header), header.Size());
+		if (!file || !header.IsCorrect()) {
+			return false;
+		}
+
+		const auto page_size = header.page_size();
+		const auto next = header.next_page_addr();
+		const std::streamoff page_data = page_pos + static_cast<std::streamoff>(header.Size());
+		const size_t page_end = data_cursor + static_cast<size_t>(page_size);
+
+		if (offset_in_data < page_end && end > data_cursor) {
+			const size_t from = MAX(offset_in_data, data_cursor);
+			const size_t to = MIN(end, page_end);
+			const size_t chunk = to - from;
+			file.clear();
+			file.seekp(page_data + static_cast<std::streamoff>(from - data_cursor), ios_base::beg);
+			file.write(src + (from - offset_in_data), chunk);
+			if (!file) {
+				return false;
+			}
+		}
+
+		if (end <= page_end) {
+			return true;
+		}
+		if (next == format::UNDEFINED_VALUE) {
+			return false;
+		}
+
+		data_cursor = page_end;
+		page_pos = static_cast<std::streamoff>(next + format::BASE_OFFSET);
+	}
+}
+
+template<typename format>
+static int delete_blocks(boost::filesystem::fstream &file, const string &filename, const vector<string> &masks)
+{
+	typename format::file_header_t FileHeader;
+	file.seekg(format::BASE_OFFSET, ios_base::beg);
+	file.read(reinterpret_cast<char*>(&FileHeader), FileHeader.Size());
+	if (!file) {
+		return V8UNPACK_NOT_V8_FILE;
+	}
+
+	const auto toc_pos = format::BASE_OFFSET + static_cast<std::streamoff>(format::file_header_t::Size());
+	auto pElemsAddrs = ReadElementsAllocationTable<format>(file);
+	auto ElemsNum = pElemsAddrs.size();
+
+	auto free_head = FileHeader.next_page_addr;
+	size_t removed = 0;
+
+	for (uint32_t i = 0; i < ElemsNum; i++) {
+		if (pElemsAddrs[i].fffffff != format::UNDEFINED_VALUE) {
+			break;
+		}
+		if (pElemsAddrs[i].elem_header_addr == format::UNDEFINED_VALUE) {
+			continue;
+		}
+
+		file.clear();
+		file.seekg(pElemsAddrs[i].elem_header_addr + format::BASE_OFFSET, ios_base::beg);
+
+		CV8Elem elem;
+		if (!SafeReadBlockData<format>(file, elem.header)) {
+			return V8UNPACK_HEADER_ELEM_NOT_CORRECT;
+		}
+
+		if (!NameMatchesMasks(elem.GetName(), masks)) {
+			continue;
+		}
+
+		if (!append_block_to_free_list<format>(file, pElemsAddrs[i].elem_header_addr, free_head)) {
+			return V8UNPACK_HEADER_ELEM_NOT_CORRECT;
+		}
+		if (!append_block_to_free_list<format>(file, pElemsAddrs[i].elem_data_addr, free_head)) {
+			return V8UNPACK_HEADER_ELEM_NOT_CORRECT;
+		}
+
+		pElemsAddrs[i].elem_header_addr = format::UNDEFINED_VALUE;
+		pElemsAddrs[i].elem_data_addr = format::UNDEFINED_VALUE;
+
+		if (!write_into_block<format>(
+				file,
+				toc_pos,
+				static_cast<size_t>(i) * format::elem_addr_t::Size(),
+				reinterpret_cast<const char*>(&pElemsAddrs[i]),
+				format::elem_addr_t::Size())) {
+			return V8UNPACK_ERROR;
+		}
+
+		++removed;
+	}
+
+	if (removed != 0) {
+		FileHeader.next_page_addr = free_head;
+		file.clear();
+		file.seekp(format::BASE_OFFSET, ios_base::beg);
+		file.write(reinterpret_cast<const char*>(&FileHeader), FileHeader.Size());
+		if (!file) {
+			return V8UNPACK_ERROR_CREATING_OUTPUT_FILE;
+		}
+	}
+
+	cout << "Delete `" << filename << "`: ok" << endl << flush;
+	return V8UNPACK_OK;
+}
+
+int DeleteBlocks(const string &filename, const vector<string> &masks)
+{
+	boost::filesystem::fstream file(filename, ios_base::in | ios_base::out | ios_base::binary);
+
+	if (!file) {
+		cerr << "Delete `" << filename << "`. Input file not found!" << endl;
+		return V8UNPACK_SOURCE_DOES_NOT_EXIST;
+	}
+
+	if (IsV8File16ZeroBased(file)) {
+		return delete_blocks<Format16ZeroBased>(file, filename, masks);
+	}
+
+	if (!IsV8File(file)) {
+		cerr << "Delete `" << filename << "` is not V8 file!" << endl;
+		return V8UNPACK_NOT_V8_FILE;
+	}
+
+	if (IsV8File16(file)) {
+		return delete_blocks<Format16>(file, filename, masks);
+	}
+
+	return delete_blocks<Format15>(file, filename, masks);
+}
+
+static string
+elem_name_from_source(const string &source, const string &explicit_name)
+{
+	if (!explicit_name.empty()) {
+		return explicit_name;
+	}
+	return boost::filesystem::path(source).filename().string();
+}
+
+static int
+read_all_bytes(istream &in, vector<char> &data)
+{
+	data.assign(istreambuf_iterator<char>(in), istreambuf_iterator<char>());
+	return V8UNPACK_OK;
+}
+
+static int
+read_file_bytes(const string &path, vector<char> &data)
+{
+	boost::filesystem::ifstream in(path, ios_base::binary);
+	if (!in) {
+		cerr << "Add. Source not found: " << path << endl;
+		return V8UNPACK_SOURCE_DOES_NOT_EXIST;
+	}
+	return read_all_bytes(in, data);
+}
+
+static int
+prepare_add_payload(AddMode mode, const AddItem &item, vector<char> &header, vector<char> &data)
+{
+	const bool from_stdin = item.source == "-";
+	const string name = elem_name_from_source(item.source, item.name);
+	if (name.empty()) {
+		return V8UNPACK_SHOW_USAGE;
+	}
+
+	CV8Elem elem(name);
+	const bool deflate = (mode == AddMode::Build);
+
+	if (from_stdin) {
+		read_all_bytes(cin, elem.data);
+		if (deflate) {
+			int ret = elem.Pack(true);
+			if (ret) {
+				return ret;
+			}
+		}
+		header = elem.header;
+		data = elem.data;
+		return V8UNPACK_OK;
+	}
+
+	if (!boost::filesystem::exists(item.source)) {
+		cerr << "Add. Source not found: " << item.source << endl;
+		return V8UNPACK_SOURCE_DOES_NOT_EXIST;
+	}
+
+	if (boost::filesystem::is_directory(item.source)) {
+		if (mode == AddMode::Pack) {
+			cerr << "Add. Directory source requires -BUILD" << endl;
+			return V8UNPACK_SHOW_USAGE;
+		}
+		elem.IsV8File = true;
+		elem.UnpackedData.LoadFileFromFolder(item.source);
+		int ret = elem.Pack(deflate);
+		if (ret) {
+			return ret;
+		}
+		header = elem.header;
+		data = elem.data;
+		return V8UNPACK_OK;
+	}
+
+	int ret = read_file_bytes(item.source, elem.data);
+	if (ret != V8UNPACK_OK) {
+		return ret;
+	}
+	if (deflate) {
+		ret = elem.Pack(true);
+		if (ret) {
+			return ret;
+		}
+	}
+	header = elem.header;
+	data = elem.data;
+	return V8UNPACK_OK;
+}
+
+template<typename format, typename stream_t, typename addr_t>
+static bool take_free_page(
+		stream_t &file,
+		addr_t &free_head,
+		size_t min_page_size,
+		addr_t &out_addr,
+		typename format::block_header_t &out_header)
+{
+	addr_t prev = format::UNDEFINED_VALUE;
+	addr_t curr = free_head;
+
+	while (curr != format::UNDEFINED_VALUE) {
+		file.clear();
+		file.seekg(curr + format::BASE_OFFSET, ios_base::beg);
+		typename format::block_header_t header;
+		file.read(reinterpret_cast<char*>(&header), header.Size());
+		if (!file || !header.IsCorrect()) {
+			return false;
+		}
+
+		const auto next = header.next_page_addr();
+		if (header.page_size() >= min_page_size) {
+			if (prev == format::UNDEFINED_VALUE) {
+				free_head = next;
+			} else {
+				file.clear();
+				file.seekg(prev + format::BASE_OFFSET, ios_base::beg);
+				typename format::block_header_t prev_header;
+				file.read(reinterpret_cast<char*>(&prev_header), prev_header.Size());
+				if (!file || !prev_header.IsCorrect()) {
+					return false;
+				}
+				prev_header.set_next_page_addr(next);
+				file.clear();
+				file.seekp(prev + format::BASE_OFFSET, ios_base::beg);
+				file.write(reinterpret_cast<const char*>(&prev_header), prev_header.Size());
+				if (!file) {
+					return false;
+				}
+			}
+			out_addr = curr;
+			out_header = header;
+			return true;
+		}
+
+		prev = curr;
+		curr = next;
+	}
+
+	return false;
+}
+
+template<typename format, typename stream_t, typename addr_t>
+static bool allocate_block(
+		stream_t &file,
+		addr_t &free_head,
+		const char *data,
+		size_t data_size,
+		size_t preferred_page_size,
+		addr_t &out_addr)
+{
+	size_t page_size = preferred_page_size;
+	if (page_size < data_size) {
+		page_size = data_size;
+	}
+
+	typename format::block_header_t reused;
+	if (take_free_page<format>(file, free_head, data_size, out_addr, reused)) {
+		reused.set_data_size(data_size);
+		reused.set_next_page_addr(format::UNDEFINED_VALUE);
+		file.clear();
+		file.seekp(out_addr + format::BASE_OFFSET, ios_base::beg);
+		file.write(reinterpret_cast<const char*>(&reused), reused.Size());
+		if (data_size != 0) {
+			file.write(data, data_size);
+		}
+		return static_cast<bool>(file);
+	}
+
+	file.clear();
+	file.seekp(0, ios_base::end);
+	const auto endpos = file.tellp();
+	out_addr = static_cast<addr_t>(static_cast<std::streamoff>(endpos) - format::BASE_OFFSET);
+
+	typename format::block_header_t header = format::block_header_t::create(
+			static_cast<uint32_t>(data_size),
+			static_cast<uint32_t>(page_size));
+	file.write(reinterpret_cast<const char*>(&header), header.Size());
+	if (data_size != 0) {
+		file.write(data, data_size);
+	}
+	for (size_t i = page_size - data_size; i; --i) {
+		file << '\0';
+	}
+	return static_cast<bool>(file);
+}
+
+template<typename format, typename stream_t>
+static bool toc_last_page(
+		stream_t &file,
+		std::streamoff toc_pos,
+		size_t &capacity,
+		std::streamoff &last_pos,
+		typename format::block_header_t &last_header)
+{
+	capacity = 0;
+	std::streamoff pos = toc_pos;
+
+	for (;;) {
+		file.clear();
+		file.seekg(pos, ios_base::beg);
+		typename format::block_header_t header;
+		file.read(reinterpret_cast<char*>(&header), header.Size());
+		if (!file || !header.IsCorrect()) {
+			return false;
+		}
+		capacity += static_cast<size_t>(header.page_size());
+		last_pos = pos;
+		last_header = header;
+		if (header.next_page_addr() == format::UNDEFINED_VALUE) {
+			return true;
+		}
+		pos = static_cast<std::streamoff>(header.next_page_addr() + format::BASE_OFFSET);
+	}
+}
+
+template<typename format, typename stream_t, typename addr_t>
+static bool ensure_toc_capacity(
+		stream_t &file,
+		std::streamoff toc_pos,
+		size_t needed,
+		addr_t &free_head)
+{
+	size_t capacity = 0;
+	std::streamoff last_pos = toc_pos;
+	typename format::block_header_t last_header;
+
+	if (!toc_last_page<format>(file, toc_pos, capacity, last_pos, last_header)) {
+		return false;
+	}
+
+	while (capacity < needed) {
+		addr_t new_addr = 0;
+		if (!allocate_block<format>(
+				file,
+				free_head,
+				nullptr,
+				0,
+				format::DEFAULT_PAGE_SIZE,
+				new_addr)) {
+			return false;
+		}
+
+		last_header.set_next_page_addr(new_addr);
+		file.clear();
+		file.seekp(last_pos, ios_base::beg);
+		file.write(reinterpret_cast<const char*>(&last_header), last_header.Size());
+		if (!file) {
+			return false;
+		}
+
+		capacity += format::DEFAULT_PAGE_SIZE;
+		last_pos = static_cast<std::streamoff>(new_addr + format::BASE_OFFSET);
+		file.clear();
+		file.seekg(last_pos, ios_base::beg);
+		file.read(reinterpret_cast<char*>(&last_header), last_header.Size());
+		if (!file || !last_header.IsCorrect()) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+template<typename format>
+static int find_unused_toc_index(const vector<typename format::elem_addr_t> &toc)
+{
+	for (size_t i = 0; i < toc.size(); i++) {
+		if (toc[i].fffffff != format::UNDEFINED_VALUE) {
+			break;
+		}
+		if (toc[i].elem_header_addr == format::UNDEFINED_VALUE) {
+			return static_cast<int>(i);
+		}
+	}
+	return -1;
+}
+
+template<typename format, typename stream_t>
+static int find_toc_index_by_name(
+		stream_t &file,
+		const vector<typename format::elem_addr_t> &toc,
+		const string &name)
+{
+	for (size_t i = 0; i < toc.size(); i++) {
+		if (toc[i].fffffff != format::UNDEFINED_VALUE) {
+			break;
+		}
+		if (toc[i].elem_header_addr == format::UNDEFINED_VALUE) {
+			continue;
+		}
+
+		file.clear();
+		file.seekg(toc[i].elem_header_addr + format::BASE_OFFSET, ios_base::beg);
+		CV8Elem elem;
+		if (!SafeReadBlockData<format>(file, elem.header)) {
+			return -2;
+		}
+		if (elem.GetName() == name) {
+			return static_cast<int>(i);
+		}
+	}
+	return -1;
+}
+
+template<typename format>
+static int add_items(
+		boost::filesystem::fstream &file,
+		const string &filename,
+		const vector<AddItem> &items,
+		AddMode mode,
+		bool replace)
+{
+	typename format::file_header_t FileHeader;
+	file.clear();
+	file.seekg(format::BASE_OFFSET, ios_base::beg);
+	file.read(reinterpret_cast<char*>(&FileHeader), FileHeader.Size());
+	if (!file) {
+		return V8UNPACK_NOT_V8_FILE;
+	}
+
+	const auto toc_pos = format::BASE_OFFSET + static_cast<std::streamoff>(format::file_header_t::Size());
+	auto toc = ReadElementsAllocationTable<format>(file);
+	auto free_head = FileHeader.next_page_addr;
+	const char *op = replace ? "Put" : "Add";
+
+	for (const auto &item : items) {
+		const string name = elem_name_from_source(item.source, item.name);
+		int existing = find_toc_index_by_name<format>(file, toc, name);
+		if (existing == -2) {
+			return V8UNPACK_HEADER_ELEM_NOT_CORRECT;
+		}
+		if (existing >= 0 && !replace) {
+			cerr << op << ". `" << name << "` already exists!" << endl;
+			return V8UNPACK_ELEM_ALREADY_EXISTS;
+		}
+
+		vector<char> header;
+		vector<char> data;
+		int ret = prepare_add_payload(mode, item, header, data);
+		if (ret != V8UNPACK_OK) {
+			return ret;
+		}
+
+		if (existing >= 0) {
+			if (!append_block_to_free_list<format>(file, toc[existing].elem_header_addr, free_head)) {
+				return V8UNPACK_HEADER_ELEM_NOT_CORRECT;
+			}
+			if (!append_block_to_free_list<format>(file, toc[existing].elem_data_addr, free_head)) {
+				return V8UNPACK_HEADER_ELEM_NOT_CORRECT;
+			}
+		}
+
+		typename format::elem_addr_t entry;
+		entry.fffffff = format::UNDEFINED_VALUE;
+		if (!allocate_block<format>(
+				file,
+				free_head,
+				header.data(),
+				header.size(),
+				header.size(),
+				entry.elem_header_addr)) {
+			return V8UNPACK_ERROR_CREATING_OUTPUT_FILE;
+		}
+		if (!allocate_block<format>(
+				file,
+				free_head,
+				data.data(),
+				data.size(),
+				format::DEFAULT_PAGE_SIZE,
+				entry.elem_data_addr)) {
+			return V8UNPACK_ERROR_CREATING_OUTPUT_FILE;
+		}
+
+		size_t index;
+		if (existing >= 0) {
+			index = static_cast<size_t>(existing);
+			toc[index] = entry;
+		} else {
+			int slot = find_unused_toc_index<format>(toc);
+			if (slot >= 0) {
+				index = static_cast<size_t>(slot);
+				toc[index] = entry;
+			} else {
+				index = toc.size();
+				const size_t new_size = (index + 1) * format::elem_addr_t::Size();
+				if (!ensure_toc_capacity<format>(file, toc_pos, new_size, free_head)) {
+					return V8UNPACK_ERROR;
+				}
+
+				file.clear();
+				file.seekg(toc_pos, ios_base::beg);
+				typename format::block_header_t toc_header;
+				file.read(reinterpret_cast<char*>(&toc_header), toc_header.Size());
+				if (!file || !toc_header.IsCorrect()) {
+					return V8UNPACK_ERROR;
+				}
+				toc_header.set_data_size(static_cast<decltype(toc_header.data_size())>(new_size));
+				file.clear();
+				file.seekp(toc_pos, ios_base::beg);
+				file.write(reinterpret_cast<const char*>(&toc_header), toc_header.Size());
+				if (!file) {
+					return V8UNPACK_ERROR;
+				}
+
+				toc.push_back(entry);
+			}
+		}
+
+		if (!write_into_block<format>(
+				file,
+				toc_pos,
+				index * format::elem_addr_t::Size(),
+				reinterpret_cast<const char*>(&entry),
+				format::elem_addr_t::Size())) {
+			return V8UNPACK_ERROR;
+		}
+	}
+
+	FileHeader.next_page_addr = free_head;
+	file.clear();
+	file.seekp(format::BASE_OFFSET, ios_base::beg);
+	file.write(reinterpret_cast<const char*>(&FileHeader), FileHeader.Size());
+	if (!file) {
+		return V8UNPACK_ERROR_CREATING_OUTPUT_FILE;
+	}
+
+	cout << op << " `" << filename << "`: ok" << endl << flush;
+	return V8UNPACK_OK;
+}
+
+int AddToContainer(const string &filename, const vector<AddItem> &items, AddMode mode, bool replace)
+{
+	if (items.empty()) {
+		return V8UNPACK_SHOW_USAGE;
+	}
+
+	const char *op = replace ? "Put" : "Add";
+	boost::filesystem::fstream file(filename, ios_base::in | ios_base::out | ios_base::binary);
+	if (!file) {
+		cerr << op << " `" << filename << "`. Input file not found!" << endl;
+		return V8UNPACK_SOURCE_DOES_NOT_EXIST;
+	}
+
+	if (IsV8File16ZeroBased(file)) {
+		return add_items<Format16ZeroBased>(file, filename, items, mode, replace);
+	}
+
+	if (!IsV8File(file)) {
+		cerr << op << " `" << filename << "` is not V8 file!" << endl;
+		return V8UNPACK_NOT_V8_FILE;
+	}
+
+	if (IsV8File16(file)) {
+		return add_items<Format16>(file, filename, items, mode, replace);
+	}
+
+	return add_items<Format15>(file, filename, items, mode, replace);
+}
+
+template<typename format>
+static int unpack_block_to_stream(basic_istream<char> &file, basic_ostream<char> &out, const string &block_name)
+{
+	file.seekg(format::BASE_OFFSET, ios_base::beg);
+	typename format::file_header_t FileHeader;
+	file.read(reinterpret_cast<char*>(&FileHeader), FileHeader.Size());
+
+	auto pElemsAddrs = ReadElementsAllocationTable<format>(file);
+	auto ElemsNum = pElemsAddrs.size();
+
+	for (uint32_t i = 0; i < ElemsNum; i++) {
+		if (pElemsAddrs[i].fffffff != format::UNDEFINED_VALUE) {
+			break;
+		}
+		if (pElemsAddrs[i].elem_header_addr == format::UNDEFINED_VALUE) {
+			continue;
+		}
+
+		file.seekg(pElemsAddrs[i].elem_header_addr + format::BASE_OFFSET, ios_base::beg);
+
+		CV8Elem elem;
+		if (!SafeReadBlockData<format>(file, elem.header)) {
+			return V8UNPACK_HEADER_ELEM_NOT_CORRECT;
+		}
+
+		if (elem.GetName() != block_name) {
+			continue;
+		}
+
+		if (pElemsAddrs[i].elem_data_addr != format::UNDEFINED_VALUE) {
+			file.seekg(pElemsAddrs[i].elem_data_addr + format::BASE_OFFSET, ios_base::beg);
+			ReadBlockData<format>(file, out);
+		}
+		return V8UNPACK_OK;
+	}
+
+	cerr << "Unpack. Block `" << block_name << "` not found!" << endl;
+	return V8UNPACK_ERROR;
+}
+
 template<typename format>
 static int unpack_to_folder(boost::filesystem::ifstream &file, const string &dirname, const string &UnpackElemWithName, bool print_progress)
 {
+	if (dirname == "-" && !UnpackElemWithName.empty()) {
+		return unpack_block_to_stream<format>(file, cout, UnpackElemWithName);
+	}
+
 	int ret = V8UNPACK_OK;
 
 	boost::filesystem::path p_dir(dirname);
@@ -668,6 +1412,9 @@ static int unpack_to_folder(boost::filesystem::ifstream &file, const string &dir
 		if (pElemsAddrs[i].fffffff != format::UNDEFINED_VALUE) {
 			ElemsNum = i;
 			break;
+		}
+		if (pElemsAddrs[i].elem_header_addr == format::UNDEFINED_VALUE) {
+			continue;
 		}
 
 		file.seekg(pElemsAddrs[i].elem_header_addr + offset, ios_base::beg);

@@ -41,7 +41,8 @@ sudo dpkg -i v8unpack.deb
 ## Использование
 
 ```
-  -U[NPACK]            in_filename.cf     out_dirname
+  -U[NPACK]            in_filename.cf     out_dirname [block_name]
+  -U[NPACK]            in_filename.cf     -             block_name
   -U[NPACK]  -L[IST]   listfile
   -PA[CK]              in_dirname         out_filename.cf
   -PA[CK]    -L[IST]   listfile
@@ -51,6 +52,18 @@ sudo dpkg -i v8unpack.deb
   -D[EFLATE] -L[IST]   listfile
   -P[ARSE]             in_filename        out_dirname
   -P[ARSE]   -L[IST]   listfile
+  -DEL[ETE]            in_filename        [block_mask1 block_mask2 ...]
+  -DEL[ETE]  -L[IST]   listfile
+  -ADD [-PACK|-BUILD [-NOPACK]] [-N[AME] name] source|- out_filename
+  -ADD [-PACK|-BUILD [-NOPACK]] -LISTFILES|-LF listfile out_filename
+  -PUT [-PACK|-BUILD [-NOPACK]] [-N[AME] name] source|- out_filename
+  -PUT [-PACK|-BUILD [-NOPACK]] -LISTFILES|-LF listfile out_filename
   -B[UILD] [-N[OPACK]] in_dirname         out_filename
   -B[UILD] [-N[OPACK]] -L[IST] listfile
+  -VERSIONSFILE|-VF    -SHOW   in_filename
+  -VERSIONSFILE|-VF    -GET    in_filename  block_name
+  -VERSIONSFILE|-VF    -SET    in_filename  block_name  version
+  -VERSIONSFILE|-VF    -SET    -LIST|-LF listfile  in_filename
+  -VERSIONSFILE|-VF    -UPDATE in_filename  block_name
+  -VERSIONSFILE|-VF    -UPDATE -LIST|-LF listfile  in_filename
 ```

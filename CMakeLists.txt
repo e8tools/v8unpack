@@ -12,8 +12,8 @@ endif()
 
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
-set (V8UNPACK_SOURCES src/main.cpp src/V8File.cpp src/utils.cpp src/placeholder216.cpp src/VersionFile.cpp)
-set (V8UNPACK_HEADERS src/V8File.h src/version.h src/zconf.h src/zlib.h src/VersionFile.h)
+set (V8UNPACK_SOURCES src/main.cpp src/V8File.cpp src/utils.cpp src/placeholder216.cpp src/VersionFile.cpp src/VersionsTable.cpp)
+set (V8UNPACK_HEADERS src/V8File.h src/version.h src/zconf.h src/zlib.h src/VersionFile.h src/VersionsTable.h)
 
 if((MSVC) AND (NOT DISABLE_SINGLE_FILE))
 
