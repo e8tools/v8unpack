@@ -983,7 +983,7 @@ recursive_pack(const string &in_dirname, const string &out_filename, bool dont_d
 	auto cur_block_addr = format::file_header_t::Size() + format::block_header_t::Size();
 	typename format::elem_addr_t *pTOC;
 	pTOC = new typename format::elem_addr_t[ElemsNum];
-	cur_block_addr += MAX(format::elem_addr_t::Size() * ElemsNum, format::DEFAULT_PAGE_SIZE);
+	cur_block_addr += MAX(format::elem_addr_t::Size() * ElemsNum, format::DEFAULT_PAGE_SIZE_TOC);
 
 	boost::filesystem::ofstream file_out(out_filename, ios_base::binary);
 	//Открываем выходной файл контейнер на запись

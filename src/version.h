@@ -6,4 +6,4 @@ at http://mozilla.org/MPL/2.0/.
 ----------------------------------------------------------*/
 
 #define V8P_VERSION "3.0.43"
-#define V8P_RIGHT "\n\t2008 Denis Demidov 2008-03-30\n\t2014-2022 Sergey Batanov\n\t2019-2020 Sergey Rudakov"
+#define V8P_RIGHT "\n\t2008 Denis Demidov 2008-03-30\n\t2014-2022 Sergey Batanov\n\t2019-2026 Sergey Rudakov"
